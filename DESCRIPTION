@@ -1,12 +1,21 @@
 Package: Pandem2Application
-Title: What the Package Does (One Line, Title Case)
-Version: 0.0.0.9000
+Title: the package in connection with the pandem2 application 
+Version: 0.0.1
 Authors@R: 
-    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"),
-           comment = c(ORCID = "YOUR-ORCID-ID"))
+    c(person("Maxime", "Bonjean", , "m.bonjean@uclouvain.be", role = c("aut", "cre")),
+      person("Julie", "Hurel", , "julie.hurel@uclouvain.be", role = c("aut")),
+      person("Jerome", "Ambroise", , "jerome.ambroise@uclouvain.be", role = c("aut")),
+      person("Jean-Luc", "Gala", , "jean-luc.gala@uclouvain.be", role = c("aut"))
+      )
 Description: What the package does (one paragraph).
-License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
-    license
+License: GPL-3
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.1
+Suggests: 
+    rmarkdown,
+    knitr
+VignetteBuilder: knitr
+Depends: R (>= 3.50)
+Imports:  class,dplyr,purrr , lubridate ,splitstackshape,tidyr
+LazyData: true
