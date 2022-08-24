@@ -4,15 +4,7 @@
 \alias{simulator_withoutsplit}
 \title{Predict the variant from a training set}
 \usage{
-simulator_withoutsplit(
-  trainset,
-  testset,
-  time,
-  outcome,
-  count,
-  factor,
-  bymonth = T
-)
+simulator_withoutsplit(trainset, testset, time, outcome, count, factor)
 }
 \arguments{
 \item{trainset}{the dataset used to train the classifier}
@@ -26,8 +18,6 @@ simulator_withoutsplit(
 \item{count}{the name of the column used to desaggregate the data}
 
 \item{factor}{The number of sequence used by time for the trainset to reduce the execution time}
-
-\item{bymonth}{if you want to split the trainset by month}
 
 \item{geolocalisation}{the name of the column where the different regions are located}
 }

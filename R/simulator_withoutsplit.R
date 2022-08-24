@@ -11,7 +11,6 @@
 #' @param count the name of the column used to desaggregate the data
 #' @param outcome the name of the trainset column where the metadata to be added to the testset is located
 #' @param factor The number of sequence used by time for the trainset to reduce the execution time
-#' @param bymonth if you want to split the trainset by month
 #'
 #' @return The function returns the testset dataset with an outcome column based on the trainset. The output dataset is well aggregated.
 #' @export simulator_withoutsplit
@@ -20,7 +19,7 @@
 #' @import purrr
 #' @import lubridate
 #' @importFrom splitstackshape expandRows
-simulator_withoutsplit <- function(trainset, testset, time, outcome, count, factor, bymonth = F) {
+simulator_withoutsplit <- function(trainset, testset, time, outcome, count, factor) {
 
   if (!any(names(trainset) %in% time)) {
     if (!any(names(testset) %in% time)) {
@@ -60,43 +59,12 @@ simulator_withoutsplit <- function(trainset, testset, time, outcome, count, fact
   ###### reduce the training dataset
 
   trainset_list <- trainset_list %>%
-      group_by(time) %>%
-      mutate(sum = sum(new_cases)) %>%
-      rowwise() %>%
-      mutate(new_cases = ifelse(sum < factor, new_cases, as.integer(round(factor * new_cases / sum)))) %>%
-      filter(new_cases > 0) %>%
-      select(-sum)
-
-
-  ##### fragmentation by chunk of 1 month
-  if (bymonth == T) {
-    splitbychunk <- function(trainset_df) {
-      trainset_df <- trainset_df %>%
-        mutate(year_month = format(as.Date(time), "%Y-%m")) %>%
-        split(.$year_month) %>%
-        map(.f = function(x) x %>% select(-year_month))
-      return(trainset_df)
-    }
-
-    trainset_list <- splitbychunk(trainset_list)
-    testset_list <- splitbychunk(testset_list)
-    trainset_list <- unlist(trainset_list, recursive = F)
-    testset_list <- unlist(testset_list, recursive = F)
-
-    common_date <- intersect(names(trainset_list), names(testset_list))
-    if (is_empty(common_date)) {
-      stop("not the same date")
-    }
-
-
-    message(paste(c("Date exclusive to trainset : ", setdiff(names(trainset_list), names(testset_list))), collapse = " "))
-    message(paste(c("Date exclusive to testset : ", setdiff(names(testset_list), names(trainset_list))), collapse = " "))
-    trainset_list <- trainset_list[is.element(names(trainset_list), common_date)]
-    testset_list <- testset_list[is.element(names(testset_list), common_date)]
-  }
-
-
-
+    group_by(time) %>%
+    mutate(sum = sum(new_cases)) %>%
+    rowwise() %>%
+    mutate(new_cases = ifelse(sum < factor, new_cases, as.integer(round(factor * new_cases / sum)))) %>%
+    filter(new_cases > 0) %>%
+    select(-sum)
 
   ######### definition of the function to simulate on 1 geolocalisation
 
@@ -142,10 +110,9 @@ simulator_withoutsplit <- function(trainset, testset, time, outcome, count, fact
   }
 
   ###### apply the knn prediction on each compoent of the lists
-  testset_predicted <- map2_df(.x = trainset_list, .y = testset_list, .f = function(.x, .y) simulator_1geo(trainset_1geo = .x, testset_1geo = .y, time = "time", outcome = outcome, count = "new_cases"))
+  testset_predicted <-  simulator_1geo(trainset_1geo = trainset_list, testset_1geo = testset_list, time = "time", outcome = outcome, count = "new_cases")
 
-  testset_predicted <- union_all(testset_predicted, testset_nosimulated)
   names(testset_predicted)[names(testset_predicted) %in% "time"] <- time
-  names(testset_predicted)[names(testset_predicted) %in% "new_cases"] <- count
+  names(testset_predicted)[names(testset_predicted) %in% "cases"] <- count
   return(testset_predicted)
 }
