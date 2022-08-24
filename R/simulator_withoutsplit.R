@@ -21,9 +21,6 @@
 #' @import lubridate
 #' @importFrom splitstackshape expandRows
 simulator_withoutsplit <- function(trainset, testset, time, outcome, count, factor, bymonth = T) {
-  if (!any(names(testset) %in% geolocalisation)) {
-    stop("error : wrong geolocalisation in testset")
-  }
 
   if (!any(names(trainset) %in% time)) {
     if (!any(names(testset) %in% time)) {
@@ -103,7 +100,7 @@ simulator_withoutsplit <- function(trainset, testset, time, outcome, count, fact
 
   ######### definition of the function to simulate on 1 geolocalisation
 
-  simulator_1geo <- function(trainset_1geo, testset_1geo, time, geolocalisation, outcome, count = NULL) {
+  simulator_1geo <- function(trainset_1geo, testset_1geo, time, outcome, count = NULL) {
     set.seed(2)
 
     trainset_1geo <- trainset_1geo %>%
@@ -145,7 +142,7 @@ simulator_withoutsplit <- function(trainset, testset, time, outcome, count, fact
   }
 
   ###### apply the knn prediction on each compoent of the lists
-  testset_predicted <- map2_df(.x = trainset_list, .y = testset_list, .f = function(.x, .y) simulator_1geo(trainset_1geo = .x, testset_1geo = .y, time = "time", geolocalisation = "geolocalisation", outcome = outcome, count = "new_cases"))
+  testset_predicted <- map2_df(.x = trainset_list, .y = testset_list, .f = function(.x, .y) simulator_1geo(trainset_1geo = .x, testset_1geo = .y, time = "time", outcome = outcome, count = "new_cases"))
 
   testset_predicted <- union_all(testset_predicted, testset_nosimulated)
   names(testset_predicted)[names(testset_predicted) %in% "time"] <- time
