@@ -20,7 +20,7 @@
 #' @import purrr
 #' @import lubridate
 #' @importFrom splitstackshape expandRows
-simulator_withoutsplit <- function(trainset, testset, time, outcome, count, factor, bymonth = T) {
+simulator_withoutsplit <- function(trainset, testset, time, outcome, count, factor, bymonth = F) {
 
   if (!any(names(trainset) %in% time)) {
     if (!any(names(testset) %in% time)) {
