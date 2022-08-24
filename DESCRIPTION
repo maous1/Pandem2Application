@@ -7,7 +7,7 @@ Authors@R:
       person("Jerome", "Ambroise", , "jerome.ambroise@uclouvain.be", role = c("aut")),
       person("Jean-Luc", "Gala", , "jean-luc.gala@uclouvain.be", role = c("aut"))
       )
-Description: the package in connection with the pandem2 application 
+Description: the package in connection with the pandem2 application. 
 License: GPL-3
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)

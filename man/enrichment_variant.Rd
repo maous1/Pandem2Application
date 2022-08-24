@@ -16,6 +16,9 @@ enrichment_variant(
 \arguments{
 \item{time}{}
 }
+\value{
+full_aggregated
+}
 \description{
 Title
 }

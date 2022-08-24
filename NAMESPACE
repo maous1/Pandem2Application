@@ -3,6 +3,7 @@
 export(add_variable)
 export(enrichment_variant)
 export(simulator)
+export(simulator_withoutsplit)
 import(class)
 import(dplyr)
 import(lubridate)
