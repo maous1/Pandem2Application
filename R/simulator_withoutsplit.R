@@ -113,6 +113,6 @@ simulator_withoutsplit <- function(trainset, testset, time, outcome, count, fact
   testset_predicted <-  simulator_1geo(trainset_1geo = trainset_list, testset_1geo = testset_list, time = "time", outcome = outcome, count = "new_cases")
 
   names(testset_predicted)[names(testset_predicted) %in% "time"] <- time
-  names(testset_predicted)[names(testset_predicted) %in% "cases"] <- count
+  names(testset_predicted)[names(testset_predicted) %in% "new_cases"] <- count
   return(testset_predicted)
 }
