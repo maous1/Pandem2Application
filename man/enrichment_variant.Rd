@@ -8,16 +8,14 @@ enrichment_variant(
   data_aggregated,
   variable,
   group,
-  variants,
+  col_enrichment,
+  group_enrichment,
   multiplicateur,
   time
 )
 }
 \arguments{
-\item{time}{}
-}
-\value{
-full_aggregated
+\item{group_enrichment}{}
 }
 \description{
 Title
