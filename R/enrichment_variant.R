@@ -112,7 +112,7 @@ enrichment_variant <- function(data_aggregated, variable ,group, col_enrichment,
 
     full_aggregated_week <- full_desaggregated_week %>%
       group_by_all() %>%
-      summarise(new_cases = n())
+      summarise(cases = n())
     full_aggregated <- union_all(full_aggregated, full_aggregated_week)
     print(paste("pourcentage in week ", week, "=", sum(pourcentage_wanted$pourcentage),"for the category"))
     print(paste("pourcentage in week ", week, "=", sum(pourcentage_other$pourcentage),"for other category"))
