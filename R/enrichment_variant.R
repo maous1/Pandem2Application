@@ -21,7 +21,7 @@ enrichment_variant <- function(data_aggregated, variable ,group, col_enrichment,
   for (week in semaine) {
     data_aggregated_week <- data_aggregated %>% filter(time == week)
 
-    full_desaggregated_week <- expandRows(data_aggregated_week, count = "new_cases", drop = T)
+    full_desaggregated_week <- expandRows(data_aggregated_week, count = "cases", drop = T)
 
     pourcentage_wanted <- full_desaggregated_week %>%
       group_by_all() %>%
