@@ -10,7 +10,9 @@
 #'
 #' @return
 #' @export
-#'
+#' @import dplyr
+#' @import lubridate
+#' @importFrom splitstackshape expandRows
 #' @examples
 enrichment_variant <- function(data_aggregated, variable ,group, col_enrichment,group_enrichment, multiplicateur,time) {
 
