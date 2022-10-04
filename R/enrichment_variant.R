@@ -15,107 +15,95 @@
 enrichment_variant <- function(data_aggregated, variable ,group, col_enrichment,group_enrichment, multiplicateur,time) {
 
 
-  names(data_aggregated)[names(data_aggregated) %in% time] <- "time"
-  semaine <- unique(data_aggregated$time)
-  full_aggregated <- data.frame()
+  semaine <- c(unique(data_aggregated[time]))
+  full_aggregated <- tibble()
   for (week in semaine) {
-    data_aggregated_week <- data_aggregated %>% filter(time == week)
+    data_aggregated_week <- data_aggregated %>% filter({{time}} == week)
 
-    full_desaggregated_week <- expandRows(data_aggregated_week, count = "cases", drop = T)
+    pourcentage_category_unwanted <- data_aggregated_week  %>%
+      filter(!!sym(col_enrichment) != group_enrichment)
 
-    pourcentage_wanted <- full_desaggregated_week %>%
-      group_by_all() %>%
-      summarise(nb = n()) %>%
-      group_by(across(all_of(variable))) %>%
-      mutate(pourcentage = nb / sum(nb))%>%
+    pourcentage_category_wanted <- data_aggregated_week%>%
       filter(!!sym(col_enrichment) == group_enrichment)
+    pourcentage_other_wanted <- data.frame()
+    pourcentage_other_unwanted <- data.frame()
     for (i in 1:length(group)) {
-      pourcentage_wanted= pourcentage_wanted%>% filter(!!sym(variable[i]) == group[i])
+      pourcentage_other_wanted_current = pourcentage_category_wanted%>%filter(!!sym(variable[i]) != group[i])
+      pourcentage_category_wanted= pourcentage_category_wanted%>% filter(!!sym(variable[i]) == group[i])
+      pourcentage_other_wanted= union_all(pourcentage_other_wanted,pourcentage_other_wanted_current)
+      pourcentage_other_unwanted_current = pourcentage_category_unwanted%>%filter(!!sym(variable[i]) != group[i])
+      pourcentage_category_unwanted= pourcentage_category_unwanted%>% filter(!!sym(variable[i]) == group[i])
+      pourcentage_other_unwanted= union_all(pourcentage_other_unwanted,pourcentage_other_unwanted_current)
     }
+    m = multiplicateur
+    X = pourcentage_category_wanted$cases
+    Y = sum(pourcentage_category_unwanted$cases)
+    W = sum(pourcentage_other_wanted$cases)
+    Z = sum(pourcentage_other_unwanted$cases)
+    RR = X*(Z+W)/((Y+X)*W)
 
 
-    targetted_category <- full_desaggregated_week
-    other_category = data.frame()
-    for (i in 1:length(group)) {
-      other_category_current = targetted_category%>%filter(!!sym(variable[i]) != group[i])
-      targetted_category= targetted_category%>% filter(!!sym(variable[i]) == group[i])
-      other_category= union_all(other_category,other_category_current)
-    }
+    I = (-X*Z-W*X+RR*m*(Y*W+X*W))/(Y*RR*m+RR*m*X+W+Z)
+
+    if(I>Y){I=Y}
+    if(I>W){I=W}
+    I = floor(I)
+
+    new_RR = ((X+I)/(X+Y))/((W-I)/(Z+W))
+    print(paste("The relatif risk in", week, "=", RR))
+    print(paste("The new relatif risk in ", week, "=", new_RR))
 
 
-    targetted_category_unwanted <- targetted_category %>% filter(!!sym(col_enrichment) != group_enrichment)
+    #######
+    pourcentage_category_wanted$cases = pourcentage_category_wanted$cases+I
+    full_aggregated = union_all(full_aggregated,pourcentage_category_wanted)
+    #######
+    pourcentage_category_unwanted = pourcentage_category_unwanted %>%
+      ungroup() %>%
+      mutate(pourcentage = cases / sum(cases))%>%
+      mutate(remove = (pourcentage * I))%>%
+      mutate(floor = floor(remove))%>%
+      mutate(remove = remove-floor)%>%
+      arrange(desc(remove))
 
-    other_category_wanted <- other_category %>% filter(!!sym(col_enrichment) == group_enrichment)
-    other_category_unwanted <- other_category %>% filter(!!sym(col_enrichment) != group_enrichment)
+    miss = I - sum(pourcentage_category_unwanted$floor)
+    pourcentage_category_unwanted$floor[1:miss] = pourcentage_category_unwanted$floor[1:miss]+1
 
-    fullother <- rbind(other_category_wanted, other_category_unwanted)
+    variant = pourcentage_category_unwanted %>% ungroup() %>%select({{col_enrichment}},floor)%>%filter(floor!=0)
+    pourcentage_category_unwanted = pourcentage_category_unwanted %>% mutate(cases = cases-floor) %>% select(-c("pourcentage","remove","floor"))
+    full_aggregated = union_all(full_aggregated,pourcentage_category_unwanted)
+    #######
+    pourcentage_other_wanted = pourcentage_other_wanted %>%
+      ungroup() %>%
+      mutate(pourcentage = cases / sum(cases))%>%
+      mutate(remove = (pourcentage * I))%>%
+      mutate(floor = floor(remove))%>%
+      mutate(remove = remove-floor)%>%
+      arrange(desc(remove))
 
+    miss = I - sum(pourcentage_other_wanted$floor)
+    pourcentage_other_wanted$floor[1:miss] = pourcentage_other_wanted$floor[1:miss]+1
+    category = pourcentage_other_wanted %>% ungroup() %>%select(-c({{col_enrichment}},"cases","pourcentage","remove"))%>%filter(floor!=0)
+    pourcentage_other_wanted = pourcentage_other_wanted %>% mutate(cases = cases-floor) %>% select(-c("pourcentage","remove","floor"))
+    full_aggregated = union_all(full_aggregated,pourcentage_other_wanted)
 
-    pourcentage_other <- fullother %>%
-      group_by_all() %>%
-      summarise(nb = n()) %>%
-      group_by(across(all_of(variable))) %>%
-      mutate(pourcentage = nb / sum(nb)) %>%
-      filter(!!sym(col_enrichment) == group_enrichment)
+    #######
+    category_desagregated = category %>% expandRows(count = "floor")
+    variant_desagregated = expandRows(dataset = variant,count = "floor")
+    colnames(variant_desagregated) = "sample__"
+    variant_desagregated = sample(variant_desagregated$sample__,replace = F)
+    category_desagregated [col_enrichment] = variant_desagregated
 
+    pourcentage_other_unwanted_current = category_desagregated%>% group_by_all()%>% summarise(cases =n())
+    pourcentage_other_unwanted = union_all(pourcentage_other_unwanted_current,pourcentage_other_unwanted)
 
-    while (ifelse(test = is_empty(pourcentage_wanted$pourcentage),
-                  yes = ifelse(test = is_empty(pourcentage_other$pourcentage),
-                               yes = FALSE,
-                               no = TRUE),
-                  no = ifelse(test = is_empty(pourcentage_other$pourcentage),
-                              yes = FALSE,
-                              no = sum(pourcentage_wanted$pourcentage) < sum(pourcentage_other$pourcentage) * multiplicateur & sum(pourcentage_wanted$pourcentage) != 1))  ) {
+    column = colnames(pourcentage_other_unwanted)
+    column = column[column!="cases"]
+    pourcentage_other_unwanted = pourcentage_other_unwanted%>%
+      group_by(across({{column}}))%>%
+      summarise(cases = sum(cases))
 
-      targetted_category <- full_desaggregated_week
-      other_category = data.frame()
-      for (i in 1:length(group)) {
-        other_category_current = targetted_category%>%filter(!!sym(variable[i]) != group[i])
-        targetted_category= targetted_category%>% filter(!!sym(variable[i]) == group[i])
-        other_category= union_all(other_category,other_category_current)
-      }
-      targetted_category_wanted <- targetted_category %>% filter(!!sym(col_enrichment) == group_enrichment)
-      targetted_category_unwanted <- targetted_category %>% filter(!!sym(col_enrichment) != group_enrichment)
-
-      other_category_wanted <- other_category %>% filter(!!sym(col_enrichment) == group_enrichment)
-      other_category_unwanted <- other_category %>% filter(!!sym(col_enrichment) != group_enrichment)
-
-
-      random <- sample(1:length(targetted_category_unwanted$country_code), 1)
-      row_wanted <- targetted_category_unwanted [random,]
-      targetted_category_unwanted <- targetted_category_unwanted[-random,]
-
-      random <- sample(1:length(other_category_wanted$country_code), 1)
-      row_unwanted <- other_category_wanted[random,]
-      other_category_wanted <- other_category_wanted[-random,]
-      row_unwanted[col_enrichment] <- row_wanted[col_enrichment]
-      row_wanted[col_enrichment] = group_enrichment
-      full_desaggregated_week <- rbind(targetted_category_unwanted, targetted_category_wanted, row_wanted, other_category_wanted, other_category_unwanted, row_unwanted)
-      fullother <- rbind(other_category_wanted, other_category_unwanted, row_unwanted)
-
-      pourcentage_wanted <- full_desaggregated_week %>%
-        group_by_all() %>%
-        summarise(nb = n()) %>%
-        group_by(across(all_of(variable))) %>%
-        mutate(pourcentage = nb / sum(nb))%>% filter(!!sym(col_enrichment) == group_enrichment)
-      for (i in 1:length(group)) {
-        pourcentage_wanted= pourcentage_wanted%>% filter(!!sym(variable[i]) == group[i])
-      }
-
-      pourcentage_other <- fullother %>%
-        group_by_all() %>%
-        summarise(nb = n()) %>%
-        group_by(across(all_of(variable))) %>%
-        mutate(pourcentage = nb / sum(nb)) %>%
-        filter(!!sym(col_enrichment) == group_enrichment)
-    }
-
-    full_aggregated_week <- full_desaggregated_week %>%
-      group_by_all() %>%
-      summarise(cases = n())
-    full_aggregated <- union_all(full_aggregated, full_aggregated_week)
-    print(paste("pourcentage in week ", week, "=", sum(pourcentage_wanted$pourcentage),"for the category"))
-    print(paste("pourcentage in week ", week, "=", sum(pourcentage_other$pourcentage),"for other category"))
+    full_aggregated = union_all(full_aggregated,pourcentage_other_unwanted)
   }
 
   return(full_aggregated)
