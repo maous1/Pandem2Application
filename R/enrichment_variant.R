@@ -19,7 +19,7 @@ enrichment_variant <- function(data_aggregated, variable ,group, col_enrichment,
 
   semaine <- c(unique(data_aggregated[time]))
   full_aggregated <- tibble()
-  for (week in semaine) {
+  for (week in unlist(semaine)) {
     data_aggregated_week <- data_aggregated %>% filter(!!sym(time) == week)
 
     pourcentage_category_unwanted <- data_aggregated_week  %>%
