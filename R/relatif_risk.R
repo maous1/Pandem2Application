@@ -1,3 +1,15 @@
+#' Title
+#'
+#' @param data_aggregated
+#' @param variable
+#' @param group
+#' @param col_enrichment
+#' @param group_enrichment
+#'
+#' @return
+#' @export
+#'
+#' @examples
 relatif_risk <- function(data_aggregated, variable ,group, col_enrichment,group_enrichment) {
 
   pourcentage_category_unwanted <- data_aggregated  %>%

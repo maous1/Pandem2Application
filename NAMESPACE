@@ -2,6 +2,7 @@
 
 export(add_variable)
 export(enrichment_variant)
+export(relatif_risk)
 export(simulator)
 export(simulator_withoutsplit)
 import(class)
