@@ -38,7 +38,7 @@ enrichment_variant <- function(data_aggregated, variable ,group, col_enrichment,
       pourcentage_other_unwanted= union_all(pourcentage_other_unwanted,pourcentage_other_unwanted_current)
     }
     m = multiplicateur
-    X = pourcentage_category_wanted$cases
+    X = sum(pourcentage_category_wanted$cases)
     Y = sum(pourcentage_category_unwanted$cases)
     W = sum(pourcentage_other_wanted$cases)
     Z = sum(pourcentage_other_unwanted$cases)
