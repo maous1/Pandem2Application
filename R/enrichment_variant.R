@@ -15,7 +15,7 @@
 #' @export
 #'
 #' @examples
-enrichment_variant <- function(data_aggregated, variable ,group, col_enrichment,group_enrichment, multiplicateur,time) {
+enrichment_variant <- function(data_aggregated, variable ,group, col_enrichment,group_enrichment, RR,time) {
 
   semaine <- c(unique(data_aggregated[time]))
   full_aggregated <- tibble()
@@ -37,15 +37,12 @@ enrichment_variant <- function(data_aggregated, variable ,group, col_enrichment,
       pourcentage_category_unwanted= pourcentage_category_unwanted%>% filter(!!sym(variable[i]) == group[i])
       pourcentage_other_unwanted= union_all(pourcentage_other_unwanted,pourcentage_other_unwanted_current)
     }
-    m = multiplicateur
     X = sum(pourcentage_category_wanted$cases)
     Y = sum(pourcentage_category_unwanted$cases)
     W = sum(pourcentage_other_wanted$cases)
     Z = sum(pourcentage_other_unwanted$cases)
-    RR = X*(Z+W)/((Y+X)*W)
 
-
-    I = (-X*Z-W*X+RR*m*(Y*W+X*W))/(Y*RR*m+RR*m*X+W+Z)
+    I = (-X*Z-W*X+RR*(Y*W+X*W))/(Y*RR+RR*X+W+Z)
 
     if(I!="NaN"){
       if(I>Y){I=Y}
